@@ -1,48 +1,41 @@
-from fastapi import FastAPI
-from datetime import datetime
+from fastapi import FastAPI, HTTPException, status
+from app.modelos.clientes import Cliente
+from app.modelos.transacciones import TransaccionBase
+from app.modelos.facturas import Factura
+from app.enrutadores import clientes
+from app.enrutadores import facturas
+from app.enrutadores import transacciones
+from app.conexion_bd import crear_tablas
 
-app = FastAPI()
+
+#||||||||||||||||||||||
+from app.modelos.clientes import Cliente, clienteleer
+from app.modelos.facturas import Factura, facturaleer, facturaleercompuesta
+from app.modelos.transacciones import transaccion
 
 
-@app.get("/")
-def inicio():
-    return{"mensaje": "hola aprendices 3407180"}
+# Resolver referencias cruzadas entre modelos (forward references)
+Cliente.model_rebuild()
+Factura.model_rebuild()
+transaccion.model_rebuild()
+facturaleer.model_rebuild()
+facturaleercompuesta.model_rebuild()
 
-@app.get("/saludar")
-def saludar():
-    return {"saludo": "hola soy..."}
 
-@app.get("/hora")
-def hora ():
-    return {"hora": datetime()}  
-       
-@app.get("saludar/{nombre}/{apellido}/{Edad}")
-def saludar2(nombre, apellido, Edad):
-    return {"saludo": f"Hola soy{nombre} {apellido} {Edad}"}
 
-@app.get("/amigos")
-def lista_amigos():
-    amigos = [
-        "Sebas",
-        "Cami",
-        "Matias",
-        "Tban",
-        "Samuel"
-    ]
-    return {"amigos": amigos}
+app = FastAPI(lifespan=crear_tablas)
 
-@app.get("/amigos/{id}")
-def obtener_amigos(id: int):
-         return {"amigos": amigo[id]}
 
-#usuarios
-lista_clientes = [
-    {"id": 1, "nombre":"Sebastian", "email": "sebastian@gmail.com", "edad": 18, "descripción":"N"},
-    {"id": 2, "nombre":"Cami", "email": "cami@gmail.com", "edad": 17, "descripción":"NA"},
-    {"id": 3, "nombre":"Esteban", "email": "Esteban@gmail.com", "edad": 20, "descripción":"NA"},
-    {"id": 4, "nombre":"Maria", "email": "Maria@gmail.com", "edad": 10, "descripción":"NA"},
-    {"id": 5, "nombre":"Enrique", "email": "Enrique@gmail.com", "edad": 38, "descripción":"NA"}
-]
-@app.get("/clientes")
-def listar_clientes():
-    return lista_clientes
+
+lista_clientes: list[Cliente] = []
+lista_transacciones: list[TransaccionBase] = []
+lista_facturas: list[Factura] = []
+ 
+#incluir el enrutador de clientes
+app.include_router(clientes.rutas_clientes, tags=["Clientes"])
+
+#incluir el enrutador de facturas
+app.include_router(facturas.rutas_facturas, tags=["Facturas"])
+
+#incluir el enrutador de transacciones
+app.include_router(transacciones.rutas_transacciones, tags=["Transacciones"])
